@@ -7,6 +7,7 @@ export const EnvMode = process.env.NODE_ENV;
 // Security Related
 export const SessionSecret = process.env.SESSION_SECRET; // 512-bit secret
 export const JWTSecret = process.env.JWT_SECRET; // 2048-bit secret
+export const CryptoSecret = process.env.CRYPTO_SECRET; // 4096-bit secret
 
 // Database Related
 export const DBDialect = process.env.DB_DIALECT;

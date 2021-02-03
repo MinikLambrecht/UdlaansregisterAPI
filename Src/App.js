@@ -15,7 +15,7 @@ import morgan from 'morgan';
 import logger from './Config/Winston';
 
 // Settings
-import { AppPort, SessionSecret } from './Config/Settings';
+import { AppPort, EnvMode, SessionSecret } from './Config/Settings';
 
 // Routes
 import router from './Routes';
@@ -83,17 +83,20 @@ const MorganOptions = {
 
 logger.debug('Configuration check');
 
+
 // INITIALIZATION ---------------------------------------------------------
 
 // Initialize express
 const app = express();
 
-// If the application is in development mode,
-// trust any proxy to make express session save the cookies
-if (app.get('env') === 'development')
+// If the application is not in development mode,
+// express will expect to sit behind a proxy thus meaning,
+// that the webserver it's on, is safe, or in other words runs HTTPS.
+// If that's the case the cookies can be saved, otherwise they won't.
+if (EnvMode == 'production')
 {
-    app.set('trust proxy', 1); // Trust first proxy
-    sessionOptions.cookie.secure = true; // Serve secure cookies
+    app.set('trust proxy', 1);              // Enable trust proxy
+    sessionOptions.cookie.secure = true;    // Serve secure cookies
 }
 
 // Enable CORS for all requests

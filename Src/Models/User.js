@@ -2,6 +2,7 @@ export class UserModel {
     constructor(data) {
         this.user_id = data.user_id;
         this.name = data.name;
+        this.password = data.password;
         this.address = data.address;
         this.city = data.city;
         this.SSN = data.SSN;

@@ -4,9 +4,7 @@ import { Router } from 'express';
 // Controllers
 // eslint-disable-next-line object-curly-newline
 import {
-    event as eventController,
-    users as userController,
-    ticket as ticketController } from './Controllers';
+    users as userController} from './Controllers';
 
 const router = Router();
 
@@ -23,6 +21,26 @@ const router = Router();
 //-------------------------------------------------------------------------------------------------
 
 // User Endpoints ---------------------------------------------------------------------------------
+
+// GET
+router.get('/user/:id', userController.GET);                        // Get a single user by their user id.
+router.get('/users', userController.GET_ALL);                       // Get all users.
+router.get('/users/:id', userController.GET_ALL_By_RoleID);         // Get all users with a specific role by their role id.
+router.get('/user', userController.GET_By_Email);                   // Get a single user by their email.
+router.get('/logout', userController.GET_Logout);                   // Logout the current user.
+
+// PUT
+router.put('/update/user/:id', userController.PUT_UpdateUser);      // Update a user, found by their user id.
+
+// POST
+router.post('/create/user', userController.POST_Register);          // Create a new user.
+router.post('/user/login', userController.POST_UserLogin);          // User login.
+router.post('/support/login', userController.POST_SupportLogin);    // Supporter login.
+router.post('/admin/login', userController.POST_AdminLogin);        // Admin login.
+
+// DELETE
+router.delete('/user/:id', userController.DELETE);                  // Delete a user, found by their user id.
+
 
 //-------------------------------------------------------------------------------------------------
 
