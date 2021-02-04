@@ -271,10 +271,6 @@ function POST_Register (req, res)
                         {
                             if (rows.insertId != null)
                             {
-                                logger.info(
-                                    `POST succeeded, user ${user.name} has been created!`,
-                                );
-
                                 return res.status(200).json({
                                     Message: `User ${user.name} has been created`,
                                 });
@@ -362,8 +358,6 @@ function POST_UserLogin (req, res)
                         {
                             logger.error(jwterr);
                         }
-
-                        logger.info(`${sessionUser.name} has logged in`);
 
                         req.session.user = sessionUser;
 
@@ -459,8 +453,6 @@ function POST_SupportLogin (req, res)
                             {
                                 logger.error(jwterr);
                             }
-
-                            logger.info(`${sessionUser.name} has logged in`);
 
                             req.session.user = sessionUser;
 
@@ -564,8 +556,6 @@ function POST_AdminLogin (req, res)
                                 logger.error(jwterr);
                             }
 
-                            logger.info(`${sessionUser.name} has logged in`);
-
                             req.session.user = sessionUser;
 
                             res.json({
@@ -611,11 +601,10 @@ function DELETE (req, res)
     {
         if (!err && rows.affectedRows > 0)
         {
-            logger.info(`DELETE succeeded, user with id ${user.user_id} has been deleted!`);
             res.json({ Message: 'User has been deleted!' });
         }
 
-        res.json({ Message: `GET failed, no user found with id: ${user.user_id}!` });
+        res.json({ Message: `DELETE failed, no user found with id: ${user.user_id}!` });
         logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
     });
 }
