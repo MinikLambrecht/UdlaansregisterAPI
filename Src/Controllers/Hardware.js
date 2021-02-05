@@ -25,9 +25,11 @@ function GET (req, res)
         {
             res.json(rows[0][0]);
         }
-
-        res.json({ Message: `GET failed, no hardware found with id: ${hardware.hw_id}!` });
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `GET failed, no hardware found with id: ${hardware.hw_id}!` });
+        }
     });
 }
 
@@ -41,9 +43,11 @@ function GET_ALL (req, res)
         {
             res.json(rows[0]);
         }
-
-        res.json({ Message: `GET failed, an unexpected error happend!` });
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `GET failed, an unexpected error happend!` });
+        }
     });
 }
 
@@ -73,17 +77,6 @@ function PUT_UpdateHardware (req, res)
         if (!err)
         {
             const arr = results[0];
-
-            // Check if the model has been registered already.
-            for (let i = 0; i < arr.length; i++) 
-            {
-                if (arr[i].Model.toLowerCase() == Model.toLowerCase())
-                {
-                    return res.status(400).json({
-                        Message: 'This model has already been registered',
-                    });
-                }
-            }
             
             const query = `CALL h4udlaan.Update_Hardware(
                 ${req.params.id},
@@ -110,16 +103,16 @@ function PUT_UpdateHardware (req, res)
                     }
                     else
                     {
-                        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+                        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);;
                     }
                 }
             });
         }
-
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        }
     });
-
-    
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -178,12 +171,16 @@ function POST_CreateHardware (req, res)
                         });
                     }
                 }
-
-                logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+                else
+                {
+                    logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+                }
             });
         }
-
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        }
     });
 }
 
@@ -204,9 +201,11 @@ function DELETE (req, res)
         {
             res.json({ Message: 'Hardware has been deleted!' });
         }
-
-        res.json({ Message: `DELETE failed, no hardware found with id: ${hardware.hw_id}!` });
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `DELETE failed, no hardware found with id: ${hardware.hw_id}!` });
+        }
     });
 }
 

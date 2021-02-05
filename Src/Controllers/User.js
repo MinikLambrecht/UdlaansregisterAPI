@@ -37,9 +37,11 @@ function GET (req, res)
             rows[0][0].SSN = AES.decrypt(rows[0][0].SSN, CryptoSecret).toString(enc.Utf8);
             res.send(rows[0][0]);
         }
-
-        res.json({ Message: `GET failed, no user found with id: ${user.user_id}!` });
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `GET failed, no user found with id: ${user.user_id}!` });
+        }
     });
 }
 
@@ -58,9 +60,11 @@ function GET_ALL (req, res)
 
             res.json(rows[0]);
         }
-
-        res.json({ Message: `GET failed, an unexpected error happend!` });
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `GET failed, an unexpected error happend!` });
+        }
     });
 }
 
@@ -81,9 +85,11 @@ function GET_ALL_By_RoleID (req, res)
 
             res.json(rows[0]);
         }
-
-        res.json({ Message: `GET failed, an unexpected error happend!` });
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `GET failed, an unexpected error happend!` });
+        }
     });
 }
 
@@ -100,9 +106,11 @@ function GET_By_Email (req, res)
             rows[0][0].SSN = AES.decrypt(rows[0][0].SSN, CryptoSecret).toString(enc.Utf8);
             res.json(rows[0][0]);
         }
-
-        res.json({ Message: `GET failed, no user found with email: ${user.email}!` });
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `GET failed, no user found with email: ${user.email}!` });
+        }
     });
 }
 
@@ -134,39 +142,24 @@ function GET_Logout (req, res)
 
 // PUT --------------------------------------------------------------------------------------------
 
-function PUT_UpdateUser (req, res)
+function PUT_UpdatePassword (req, res)
 {
-    user.name = req.body.name;
     user.password = req.body.password;
-    user.address = req.body.address;
-    user.city = req.body.city;
-    user.SSN = req.body.SSN;
-    user.email = req.body.email;
-    user.class = req.body.class;
-    user.role_id = req.body.role_id;
 
     // Generate salt for the password hashing process
     const salt = bcrypt.genSaltSync(12);
-    
+
     // Hash the users password and create a new user
     bcrypt.hash(user.password, salt, (bcerr, hash) =>
     {
         if (!bcerr)
         {
-            // Encrypt password & SSN (Social Security Number / CPR Number)
+            // Encrypt password
             user.password = hash;
-            user.SSN = AES.encrypt(user.SSN, CryptoSecret).toString();
 
-            const query = `CALL h4udlaan.Update_User(
-                '${req.params.id}',
-                '${user.name}', 
-                '${user.password}',
-                '${user.address}', 
-                '${user.city}',
-                '${user.SSN}',
-                '${user.email}',
-                '${user.class}',
-                ${user.role_id}
+            const query = `CALL h4udlaan.Update_UserPassword(
+                ${req.params.id},
+                '${user.password}'
             )`;
 
             pool.query(query, (err, rows) =>
@@ -174,17 +167,15 @@ function PUT_UpdateUser (req, res)
                 if (!err && rows.affectedRows > 0)
                 {
                     res.json({
-                        Message: 'User has been updated!',
+                        Message: 'Password has been updated!',
                     });
-
-                    logger.info(`PUT Succeeded, User with id '${user.user_id}' has been updated! [${rows.info}]`);
                 }
                 else
                 {
                     if (err == null)
                     {
                         res.json({
-                            Message: `PUT failed, no user found with id: ${user.user_id}!`,
+                            Message: `PUT failed, no user found with id: ${req.params.id}!`,
                         });
                     }
                     else
@@ -194,8 +185,57 @@ function PUT_UpdateUser (req, res)
                 }
             });
         }
+        else
+        {
+            logger.error(bcerr);
+        }
+    });
+}
 
-        logger.error(bcerr.message);
+function PUT_UpdateUser (req, res)
+{
+    user.name = req.body.name;
+    user.address = req.body.address;
+    user.city = req.body.city;
+    user.SSN = req.body.SSN;
+    user.email = req.body.email;
+    user.class = req.body.class;
+    user.role_id = req.body.role_id;
+
+    user.SSN = AES.encrypt(user.SSN, CryptoSecret).toString();
+
+    const query = `CALL h4udlaan.Update_User(
+        ${req.params.id},
+        '${user.name}', 
+        '${user.address}', 
+        '${user.city}',
+        '${user.SSN}',
+        '${user.email}',
+        '${user.class}',
+        ${user.role_id}
+    )`;
+
+    pool.query(query, (err, rows) =>
+    {
+        if (!err && rows.affectedRows > 0)
+        {
+            res.json({
+                Message: 'User has been updated!',
+            });
+        }
+        else
+        {
+            if (err == null)
+            {
+                res.json({
+                    Message: `PUT failed, no user found with id: ${user.user_id}!`,
+                });
+            }
+            else
+            {
+                logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            }
+        }
     });
 }
 
@@ -276,16 +316,22 @@ function POST_Register (req, res)
                                 });
                             }
                         }
-
-                        logger.error(`${error.code} ${error.errno} (${error.sqlState}): ${error.stack}`);
+                        else
+                        {
+                            logger.error(`${error.code} ${error.errno} (${error.sqlState}): ${error.stack}`);
+                        }
                     });
                 }
-
-                logger.error(bcerr.message);
+                else
+                {
+                    logger.error(bcerr);
+                }
             });
         }
-
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        }
     });
 }
 
@@ -307,9 +353,9 @@ function POST_UserLogin (req, res)
 
     // Find the user by Email
     // eslint-disable-next-line consistent-return
-    pool.query(q, (error, results) =>
+    pool.query(q, (err, results) =>
     {
-        if (!error)
+        if (!err)
         {
             // Return 404 if no user was found
             if (results[0].length <= 0)
@@ -377,8 +423,10 @@ function POST_UserLogin (req, res)
                 }
             });
         }
-
-        logger.error(`${error.code} ${error.errno} (${error.sqlState}): ${error.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        }
     });
 }
 
@@ -400,9 +448,9 @@ function POST_SupportLogin (req, res)
 
     // Find the user by Email
     // eslint-disable-next-line consistent-return
-    pool.query(q, (error, results) =>
+    pool.query(q, (err, results) =>
     {
-        if (!error)
+        if (!err)
         {
             // Return 404 if no user was found
             if (results[0].length <= 0)
@@ -479,8 +527,10 @@ function POST_SupportLogin (req, res)
                 }
             });
         }
-
-        logger.error(`${error.code} ${error.errno} (${error.sqlState}): ${error.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        }
     });
 }
 
@@ -502,9 +552,9 @@ function POST_AdminLogin (req, res)
 
     // Find the user by Email
     // eslint-disable-next-line consistent-return
-    pool.query(q, (error, results) =>
+    pool.query(q, (err, results) =>
     {
-        if (!error)
+        if (!err)
         {
             // Return 404 if no user was found
             if (results[0].length <= 0)
@@ -581,8 +631,10 @@ function POST_AdminLogin (req, res)
                 }
             });
         }
-
-        logger.error(`${error.code} ${error.errno} (${error.sqlState}): ${error.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        }
     });
 }
 
@@ -603,9 +655,11 @@ function DELETE (req, res)
         {
             res.json({ Message: 'User has been deleted!' });
         }
-
-        res.json({ Message: `DELETE failed, no user found with id: ${user.user_id}!` });
-        logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `DELETE failed, no user found with id: ${user.user_id}!` });
+        }
     });
 }
 
@@ -617,6 +671,7 @@ export default {
     GET_ALL_By_RoleID,
     GET_By_Email,
     GET_Logout,
+    PUT_UpdatePassword,
     PUT_UpdateUser,
     POST_Register,
     POST_UserLogin,
