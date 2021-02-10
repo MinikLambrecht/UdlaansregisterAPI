@@ -13,6 +13,14 @@ const rental = new RentalModel({
     rental_end: ''
 });
 
+function GetDiff (today, given) 
+{
+    let res = Math.abs(today - given);
+    const sign = given < today ? Math.sign(-1) : Math.sign(1);
+
+    return res * sign;
+}
+
 // GET --------------------------------------------------------------------------------------------
 
 function GET (req, res)
@@ -23,57 +31,46 @@ function GET (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            res.json(rows[0][0]);
+            if (rows[0].length <= 0)
+            {
+                res.status(400).json({
+                    Message: `GET failed, no rental found with id: ${rental.rental_id}!`
+                })
+            }
+            else
+            {
+                res.json(rows[0][0]);
+            }
         }
         else
         {
             logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
-            res.json({ Message: `GET failed, no rental found with id: ${rental.rental_id}!` });
         }
     });
 }
 
-function GET_ALL_LATE (req, res)
+function GET_AVAILABLE (req, res)
 {
-    const query = `CALL h4udlaan.GetAll_Rentals`;
-
+    const query = `SELECT * FROM h4udlaan.Get_Unused_Hardware`;
+    
     pool.query(query, (err, rows) =>
     {
-        var resArr = [];
-        if (!err && rows[0].length > 0)
+        if (!err )
         {
-            for (let i = 0; i < rows[0].length; i++)
+            if (rows.length <= 0)
             {
-                let date = new Date();
-                var GivenDate = new Date(rows[0][i].rental_end);
-
-                var yearDiff = GivenDate.getFullYear() - date.getFullYear();
-                var monthDiff = (GivenDate.getMonth() + 1) - ("0" + (date.getMonth() + 1)).slice(-2);
-                var dateDiff = ("0" + date.getDate()).slice(-2) - GivenDate.getDate();
-
-                if (yearDiff < 0 || monthDiff < 0 || dateDiff < 0)
-                {
-                    resArr.push(rows[0][i]);
-                }
-            }
-
-            if (resArr.length <= 0)
-            {
-                res.status(200).json({
-                    Message: 'There is currently no late submissions!',
-                });
+                res.json({ Message: `GET failed, no rental found with id: ${rental.rental_id}!` });
             }
             else
             {
-                res.json(resArr);
+                res.json(rows);
             }
         }
         else
         {
             logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
-            res.json({ Message: `GET failed, an unexpected error happend!` });
         }
     });
 }
@@ -85,38 +82,129 @@ function GET_ALL_ACTIVE (req, res)
     pool.query(query, (err, rows) =>
     {
         var resArr = [];
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            for (let i = 0; i < rows[0].length; i++)
+            if (rows[0].length < 1)
             {
-                let date = new Date();
-                var GivenDate = new Date(rows[0][i].rental_end);
-
-                var yearDiff = GivenDate.getFullYear() - date.getFullYear();
-                var monthDiff = (GivenDate.getMonth() + 1) - ("0" + (date.getMonth() + 1)).slice(-2);
-                var dateDiff = ("0" + date.getDate()).slice(-2) - GivenDate.getDate();
-
-                if (yearDiff >= 0)
-                {
-                    if (monthDiff >= 0)
-                    {
-                        if (dateDiff >= 0)
-                        {
-                            resArr.push(rows[0][i]);
-                        }
-                    }
-                }
-            }
-
-            if (resArr.length <= 0)
-            {
-                res.status(200).json({
-                    Message: 'There is currently no late submissions!',
-                });
+                res.json({ Message: `GET failed, no rentals was found!` });
             }
             else
             {
-                res.json(resArr);
+                for (let i = 0; i < rows[0].length; i++)
+                {
+                    let hasBeenPushed = false;
+                    let date = new Date();
+                    var GivenDate = new Date(rows[0][i].rental_end);
+
+                    var yearDiff = GetDiff(date.getFullYear(), GivenDate.getFullYear());
+                    var monthDiff = GetDiff((date.getMonth() + 1), (GivenDate.getMonth() + 1));
+                    var dateDiff = GetDiff(date.getDate(), GivenDate.getDate());
+
+                    if (yearDiff >= 0 && monthDiff >= 0 && dateDiff >= 0)
+                    {
+                        if (!hasBeenPushed)
+                        {
+                            resArr.push(rows[0][i]);
+                        }
+
+                        hasBeenPushed = true;
+                    }
+
+                    hasBeenPushed = false;
+                }
+
+                if (resArr.length < 1)
+                {
+                    res.status(200).json({
+                        Message: 'There is currently no active rentals!',
+                    });
+                }
+                else
+                {
+                    res.json(resArr);
+                }
+            }
+        }
+        else
+        {
+            logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
+            res.json({ Message: `GET failed, an unexpected error happend!` });
+        }
+    });
+}
+
+function GET_ALL_LATE (req, res)
+{
+    const query = `CALL h4udlaan.GetAll_Rentals`;
+
+    pool.query(query, (err, rows) =>
+    {
+        var resArr = [];
+        if (!err)
+        {
+            if (rows[0].length < 1)
+            {
+                res.json({ Message: `GET failed, no rentals was found!!` });
+            }
+            else
+            {
+                for (let i = 0; i < rows[0].length; i++)
+                {
+                    let hasBeenPushed = false;
+                    let date = new Date();
+                    var GivenDate = new Date(rows[0][i].rental_end);
+
+                    var yearDiff = GetDiff(date.getFullYear(), GivenDate.getFullYear());
+                    var monthDiff = GetDiff((date.getMonth() + 1), (GivenDate.getMonth() + 1));
+                    var dateDiff = GetDiff(date.getDate(), GivenDate.getDate());
+
+                    const diffRep = `[${rows[0][i].rental_id}] Date Difference: ${dateDiff}, Month Diff: ${monthDiff}, Year Diff: ${yearDiff}`;
+
+
+
+                    if (yearDiff < 0)
+                    {
+                        if (!hasBeenPushed)
+                        {
+                            resArr.push(rows[0][i]);
+                        }
+
+                        hasBeenPushed = true;
+                    }
+
+                    if (monthDiff < 0)
+                    {
+                        if (!hasBeenPushed)
+                        {
+                            resArr.push(rows[0][i]);
+                        }
+
+                        hasBeenPushed = true;
+                    }
+
+                    if (dateDiff < 0)
+                    {
+                        if (!hasBeenPushed)
+                        {
+                            resArr.push(rows[0][i]);
+                        }
+
+                        hasBeenPushed = true;
+                    }
+
+                    hasBeenPushed = false;
+                }
+
+                if (resArr.length < 1)
+                {
+                    res.status(200).json({
+                        Message: 'There is currently no late submissions!',
+                    });
+                }
+                else
+                {
+                    res.json(resArr);
+                }
             }
         }
         else
@@ -133,9 +221,16 @@ function GET_ALL (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            res.json(rows[0]);
+            if (rows[0].length <= 0)
+            {
+                res.json({ Message: `GET failed, no rentals was found!` });
+            }
+            else
+            {
+                res.json(rows[0]);
+            }
         }
         else
         {
@@ -153,9 +248,16 @@ function GET_ALL_By_HardwareID (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            res.json(rows[0]);
+            if (rows[0].length <= 0)
+            {
+                res.json({ Message: `GET failed, no rentals was found!` });
+            }
+            else
+            {
+                res.json(rows[0]);
+            }
         }
         else
         {
@@ -175,9 +277,16 @@ function GET_By_InternalHWID(req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            res.json(rows[0][0]);
+            if (rows[0].length <= 0)
+            {
+                res.json({ Message: `GET failed, no rental found with Internal HWID: ${rental.internal_hwid}!` });
+            }
+            else
+            {
+                res.json(rows[0][0]);
+            }
         }
         else
         {
@@ -195,9 +304,16 @@ function GET_ALL_By_UserID (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            res.json(rows[0]);
+            if (rows[0].length <= 0)
+            {
+                res.json({ Message: `GET failed, no rentals was found!` });
+            }
+            else
+            {
+                res.json(rows[0]);
+            }
         }
         else
         {
@@ -216,7 +332,6 @@ function PUT_UpdateRental (req, res)
 {
     const { user_id } = req.body;
     const { hw_id } = req.body;
-    const { internal_hwid } = req.body;
     const { rental_start } = req.body;
     const { rental_end } = req.body;
 
@@ -224,7 +339,6 @@ function PUT_UpdateRental (req, res)
         ${req.params.id},
         ${user_id}, 
         ${hw_id},
-        '${internal_hwid}',
         '${rental_start}',
         '${rental_end}'
     )`;
@@ -264,7 +378,6 @@ function POST_CreateRental (req, res)
 {
     const { user_id } = req.body;
     const { hw_id } = req.body;
-    const { internal_hwid } = req.body;
     const { rental_start } = req.body;
     const { rental_end } = req.body;
 
@@ -301,7 +414,6 @@ function POST_CreateRental (req, res)
                     const query = `CALL h4udlaan.Create_Rental(
                         ${user_id}, 
                         ${hw_id},
-                        '${internal_hwid}',
                         '${rental_start}',
                         '${rental_end}'
                     )`;
@@ -366,6 +478,7 @@ function DELETE (req, res)
 export default {
     GET,
     GET_ALL,
+    GET_AVAILABLE,
     GET_ALL_LATE,
     GET_ALL_ACTIVE,
     GET_ALL_By_HardwareID,

@@ -32,15 +32,21 @@ function GET (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            rows[0][0].SSN = AES.decrypt(rows[0][0].SSN, CryptoSecret).toString(enc.Utf8);
-            res.send(rows[0][0]);
+            if (rows[0].length <= 0)
+            {
+                res.json({ Message: `GET failed, no user found with id: ${user.user_id}!` });
+            }
+            else
+            {
+                rows[0][0].SSN = AES.decrypt(rows[0][0].SSN, CryptoSecret).toString(enc.Utf8);
+                res.send(rows[0][0]);
+            }
         }
         else
         {
             logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
-            res.json({ Message: `GET failed, no user found with id: ${user.user_id}!` });
         }
     });
 }
@@ -51,14 +57,21 @@ function GET_ALL (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            for (let i = 0; i < rows[0].length; i++) 
+            if (rows[0].length <= 0)
             {
-                rows[0][i].SSN = AES.decrypt(rows[0][i].SSN, CryptoSecret).toString(enc.Utf8);
+                res.json({ Message: `GET failed, no users were found!` });
             }
+            else
+            {
+                for (let i = 0; i < rows[0].length; i++) 
+                {
+                    rows[0][i].SSN = AES.decrypt(rows[0][i].SSN, CryptoSecret).toString(enc.Utf8);
+                }
 
-            res.json(rows[0]);
+                res.json(rows[0]);
+            }
         }
         else
         {
@@ -76,14 +89,21 @@ function GET_ALL_By_RoleID (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            for (let i = 0; i < rows[0].length; i++) 
+            if (rows[0].length <= 0)
             {
-                rows[0][i].SSN = AES.decrypt(rows[0][i].SSN, CryptoSecret).toString(enc.Utf8);
+                res.json({ Message: `GET failed, no users found with role id: ${user.role_id}!` });
             }
+            else
+            {
+                for (let i = 0; i < rows[0].length; i++) 
+                {
+                    rows[0][i].SSN = AES.decrypt(rows[0][i].SSN, CryptoSecret).toString(enc.Utf8);
+                }
 
-            res.json(rows[0]);
+                res.json(rows[0]);
+            }
         }
         else
         {
@@ -101,15 +121,21 @@ function GET_By_Email (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            rows[0][0].SSN = AES.decrypt(rows[0][0].SSN, CryptoSecret).toString(enc.Utf8);
-            res.json(rows[0][0]);
+            if (rows[0].length <= 0)
+            {
+                res.json({ Message: `GET failed, no user found with email: ${user.email}!` });
+            }
+            else
+            {
+                rows[0][0].SSN = AES.decrypt(rows[0][0].SSN, CryptoSecret).toString(enc.Utf8);
+                res.json(rows[0][0]);
+            }
         }
         else
         {
             logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
-            res.json({ Message: `GET failed, no user found with email: ${user.email}!` });
         }
     });
 }

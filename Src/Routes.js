@@ -30,10 +30,11 @@ router.delete('/delete/hw/:id', hwController.DELETE);                           
 // Rental Endpoints -------------------------------------------------------------------------------
 
 // GET
+router.get('/rental/available/hw', rentalController.GET_AVAILABLE);                 // Return all available hardware for rental.
 router.get('/rental/IHWID', rentalController.GET_By_InternalHWID);                  // Return a rental by Internal Hardware Identification (HWID).
 router.get('/rental/:id', rentalController.GET);                                    // Return a rental by id.
-router.get('/rentals/late', rentalController.GET_ALL_LATE);                         // Return all Late submitted rentals.
-router.get('/rentals/active', rentalController.GET_ALL_ACTIVE);                     // Return all Active rentals.
+router.get('/rentals/late', rentalController.GET_ALL_LATE);                       // Return all Late submitted rentals.
+router.get('/rentals/active', rentalController.GET_ALL_ACTIVE);                       // Return all Active rentals.
 router.get('/all/rentals', rentalController.GET_ALL);                               // Return all rentals.
 router.get('/all/rentals/hardware/:id', rentalController.GET_ALL_By_HardwareID);    // Return all rentals by hardware id.
 router.get('/all/rentals/user/:id', rentalController.GET_ALL_By_UserID);            // Return all rentals by user id.

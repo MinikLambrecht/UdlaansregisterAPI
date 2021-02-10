@@ -21,14 +21,20 @@ function GET (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            res.json(rows[0][0]);
+            if (rows[0].length <= 0)
+            {
+                res.json({ Message: `GET failed, no hardware found with id: ${hardware.hw_id}!` });
+            }
+            else
+            {
+                res.json(rows[0][0]);
+            }
         }
         else
         {
             logger.error(`${err.code} ${err.errno} (${err.sqlState}): ${err.stack}`);
-            res.json({ Message: `GET failed, no hardware found with id: ${hardware.hw_id}!` });
         }
     });
 }
@@ -39,9 +45,16 @@ function GET_ALL (req, res)
 
     pool.query(query, (err, rows) =>
     {
-        if (!err && rows[0].length > 0)
+        if (!err)
         {
-            res.json(rows[0]);
+            if (rows[0].length <= 0)
+            {
+                res.json({ Message: `GET failed, no hardware was found!` });
+            }
+            else
+            {
+                res.json(rows[0]);
+            }
         }
         else
         {
